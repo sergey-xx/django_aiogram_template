@@ -31,12 +31,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'import_export',
     'users.apps.UsersConfig',
     'admin_panel.apps.AdminPanelConfig',
-    'import_export',
     'liveconfigs',
-    'api.apps.ApiConfig',
-    'payments.apps.PaymentsConfig',
 ]
 
 MIDDLEWARE = [
@@ -74,8 +72,16 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+
 DATABASES = {
-    'default': ENV.db_url('DATABASE_URL'),
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': ENV.str('POSTGRES_USER'),
+        'USER': ENV.str('POSTGRES_PASSWORD'),
+        'PASSWORD': ENV.str('POSTGRES_DB'),
+        'HOST': ENV.str('DB_HOST'),
+        'PORT': ENV.str('DB_PORT'),
+    }
 }
 
 

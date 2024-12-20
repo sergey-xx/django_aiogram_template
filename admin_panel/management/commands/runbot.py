@@ -11,12 +11,13 @@ from django.conf import settings
 from django.core.management import BaseCommand
 
 from bot.commands import set_commands
-from bot.handlers import menu_router, start_router
+from bot.handlers import start_router
 from bot.misc.logging import configure_logger
-from bot.misc.mailing import start_milling
-from payments.payment import update_payments, repeat_payments
+from bot.misc.mailing import start_mailing
 
 ENV = settings.ENV
+REDIS_HOST = ENV.str('REDIS_HOST')
+REDIS_PORT = ENV.str('REDIS_PORT')
 
 
 async def on_startup(bot: Bot):
@@ -30,10 +31,10 @@ async def main():
 
     bot = Bot(ENV.str('TG_TOKEN_BOT'))
 
-    storage = RedisStorage.from_url(ENV('REDIS_URL'))
+    storage = RedisStorage.from_url(f'redis://{REDIS_HOST}:{REDIS_PORT}/0')
 
     dp = Dispatcher(storage=storage)
-    dp.include_routers(menu_router, start_router)
+    dp.include_routers(start_router,)
 
     jobstores = {
         'default': RedisJobStore(
@@ -52,30 +53,15 @@ async def main():
     scheduler.ctx.add_instance(bot, declared_class=Bot)
 
     scheduler.add_job(
-        start_milling,
+        start_mailing,
         'interval',
         minutes=ENV.int('MAILING_PERIOD', 1),
         replace_existing=True,
         id='mailing'
     )
-    scheduler.add_job(
-        update_payments,
-        'interval',
-        minutes=ENV.int('UPDATE_PAYMENT_PERIOD', 1),
-        replace_existing=True,
-        id='update_payments'
-    )
 
-    scheduler.add_job(
-        repeat_payments,
-        'interval',
-        minutes=ENV.int('UPDATE_PAYMENT_PERIOD', 1),
-        replace_existing=True,
-        id='repeat_payments'
-    )
-
-    scheduler.start()
-    scheduler.print_jobs()
+    # scheduler.start()
+    # scheduler.print_jobs()
 
     try:
         await on_startup(bot)

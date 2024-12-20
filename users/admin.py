@@ -6,8 +6,10 @@ from .models import TgUser
 @admin.register(TgUser)
 class TgUserAdmin(admin.ModelAdmin):
     list_display = (
-        'first_last_name',
+        'first_name',
+        'last_name',
         'username',
+        'birth_date',
         'phone_number',
         'telegram_id',
         'is_admin',

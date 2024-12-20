@@ -1,65 +1,46 @@
+import logging
 import asyncio
 
-from aiogram import exceptions, Bot
-from aiogram.types import FSInputFile
-from loguru import logger
+from aiogram import Bot, exceptions
+from aiogram.types import InputMediaDocument, InputMediaPhoto, InputMediaVideo
+from asgiref.sync import sync_to_async
+from django.utils import timezone
 
-from bot.utils import get_all_users, get_all_maling
+from admin_panel.models import Attachment, Mailing
+from backend.config import URL_CONFIG
+from users.models import TgUser
 
-
-async def start_milling(bot: Bot):
-    """Поиск запуск неотправленных (по времени) рассылок"""
-    mailings = await get_all_maling()
-    users = await get_all_users()
-
-    for mailing in mailings:
-        logger.info(f'Starting mailing №{mailing.pk}')
-        for user in users:
-
-            args = [user.telegram_id]
-            kwargs = {}
-            if mailing.media_type in ['photo', 'video', 'document']:
-
-                kwargs[mailing.media_type] = mailing.file_id
-                kwargs['caption'] = mailing.text
-            else:
-                args.append(mailing.text)
-            await send_message_mailing(bot, mailing.media_type, args, kwargs)
-            await asyncio.sleep(1 / 25)
-        mailing.is_sent = True
-        await mailing.asave()
+logger = logging.getLogger(__name__)
 
 
-async def send_message_mailing(bot, media, args, kwargs) -> None or int:
-    """Универсальная функция для отправки сообщения с вложением"""
-    send_methods = {
-        'photo': bot.send_photo,
-        'video': bot.send_video,
-        'document': bot.send_document,
-        'no_media': bot.send_message,
+async def start_mailing(bot: Bot):
+    now = timezone.now()
+    input_media = {
+        Attachment.FileType.DOCUMENT: InputMediaDocument,
+        Attachment.FileType.PHOTO: InputMediaPhoto,
+        Attachment.FileType.VIDEO: InputMediaVideo
     }
-    send_method = send_methods.get(media)
-    try:
-        logger.info(f'{kwargs}')
-        message = await send_method(*args, **kwargs)
-    except exceptions.TelegramForbiddenError as e:
-        logger.warning(e)
-    except exceptions.TelegramRetryAfter as e:
-        logger.warning(f'Flood limit is exceeded. Sleep {e.retry_after} seconds.')
-        await asyncio.sleep(e.retry_after)
-        logger.info(f'{kwargs}')
-        return await send_message_mailing(bot, media, args, kwargs)
-    except (exceptions.TelegramAPIError, exceptions.TelegramBadRequest):
-        pass
-    else:
-        logger.info(f'else {kwargs}')
-        if media == 'photo':
-            file_id = message.photo[-1].file_id
-        elif media == 'video':
-            file_id = message.video.file_id
-        elif media == 'document':
-            file_id = message.document.file_id
-        else:
-            return None
-
-        return file_id
+    users = await sync_to_async(lambda: list(TgUser.objects.all()))()
+    mailings = await sync_to_async(lambda: list(Mailing.objects.filter(date_time__lte=now, is_sent=False)))()
+    for mailing in mailings:
+        await mailing.arefresh_from_db()
+        if mailing.is_sent:
+            continue
+        mailing.is_sent = True
+        await mailing.asave(update_fields=('is_sent',))
+        logger.info(f'Mailing {mailing.id} started')
+        attachments = await sync_to_async(lambda: list(Attachment.objects.filter(mailing=mailing)))()
+        users_ = list(users)
+        while users_:
+            try:
+                user = users_[-1]
+                if len(attachments) == 0:
+                    await bot.send_message(chat_id=user.telegram_id, text=mailing.text)
+                elif len(attachments) > 0:
+                    att_list = [input_media[attachment.file_type](media=attachment.file_id) for attachment in attachments]
+                    att_list[-1].caption = mailing.text
+                    await bot.send_media_group(chat_id=user.telegram_id, media=att_list)
+                users_.pop()
+            except exceptions.TelegramRetryAfter as e:
+                logger.warning(f'Flood limit is exceeded. Sleep {e.retry_after} seconds.')
+                await asyncio.sleep(e.retry_after)

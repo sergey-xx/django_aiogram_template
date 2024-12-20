@@ -8,8 +8,6 @@ class TgUser(models.Model):
     telegram_id = models.PositiveBigIntegerField(
         unique=True,
         verbose_name='Идентификатор Telegram',
-        blank=True,
-        null=True
     )
     username = models.CharField(
         max_length=255,
@@ -17,15 +15,25 @@ class TgUser(models.Model):
         null=True,
         verbose_name='Юзернейм телеграм'
     )
-    first_last_name = models.CharField(
+    first_name = models.CharField(
         max_length=255,
-        verbose_name='ФИО'
+        verbose_name='Имя'
     )
-    phone_number = PhoneNumberField(verbose_name='Номер телефона',
-                                    unique=True)
-
+    last_name = models.CharField(
+        max_length=255,
+        verbose_name='Фамилия'
+    )
+    birth_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Дата рождения'
+    )
     is_admin = models.BooleanField(default=False)
-
+    phone_number = PhoneNumberField(
+        blank=True,
+        null=True,
+        verbose_name='Номер телефона'
+    )
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Дата создания'
@@ -41,4 +49,4 @@ class TgUser(models.Model):
         ordering = ('created_at',)
 
     def __str__(self):
-        return f'{self.first_last_name}'
+        return f'{self.first_name} {self.last_name}/{self.telegram_id}'

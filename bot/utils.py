@@ -1,14 +1,12 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import pytz
 from asgiref.sync import sync_to_async
-from django.db.models import Model, Q, OuterRef, Subquery, Exists
-from django.utils import timezone
+from django.db.models import Model, Q
 
 from admin_panel.models import Mailing
 from backend import settings
 from users.models import TgUser
-from payments.models import Payment, PaymentMethod
 
 
 @sync_to_async
@@ -88,48 +86,3 @@ def get_filtered_objects(Model: Model,
     for key, value in kwargs.items():
         query &= Q(**{key: value})
     return list(Model.objects.filter(query))
-
-
-
-@sync_to_async
-def get_paid_permission(telegram_id, days):
-    now = timezone.now()
-    delta = timedelta(days=days)
-    return Payment.objects.filter(tg_user__telegram_id=telegram_id,
-                                  paid=True,
-                                  paid_at__gte=(now - delta)
-                                  ).exists()
-
-
-@sync_to_async
-def get_trial_period(telegram_id):
-    now = timezone.now()
-    tg_user = TgUser.objects.filter(telegram_id=telegram_id).first()
-    if tg_user:
-        return (now - tg_user.created_at).days
-
-
-@sync_to_async
-def get_waiting_for_capture_paiments():
-    payments = Payment.objects.exclude(status='succeeded')
-    return list(payments)
-
-
-@sync_to_async
-def get_need_to_repeat_users(days: int):
-    now = timezone.now()
-    thirty_days_ago = now - timedelta(days=days)
-    recent_payments = Payment.objects.filter(
-        tg_user=OuterRef('pk'),
-        paid=True,
-        paid_at__gte=thirty_days_ago
-    )
-    payment_method_subquery = PaymentMethod.objects.filter(tg_user=OuterRef('pk'))
-    users = TgUser.objects.annotate(
-        recent_payment_exists=Subquery(recent_payments.values('id')[:1]),
-        has_payment_method=Exists(payment_method_subquery)
-    ).filter(
-        recent_payment_exists__isnull=True,
-        has_payment_method=True
-    ).select_related('payment_method')
-    return list(users)
