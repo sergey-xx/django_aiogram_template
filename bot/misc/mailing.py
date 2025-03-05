@@ -7,7 +7,6 @@ from asgiref.sync import sync_to_async
 from django.utils import timezone
 
 from admin_panel.models import Attachment, Mailing
-from backend.config import URL_CONFIG
 from users.models import TgUser
 
 logger = logging.getLogger(__name__)
@@ -37,7 +36,9 @@ async def start_mailing(bot: Bot):
                 if len(attachments) == 0:
                     await bot.send_message(chat_id=user.telegram_id, text=mailing.text)
                 elif len(attachments) > 0:
-                    att_list = [input_media[attachment.file_type](media=attachment.file_id) for attachment in attachments]
+                    att_list = [
+                        input_media[attachment.file_type](media=attachment.file_id) for attachment in attachments
+                    ]
                     att_list[-1].caption = mailing.text
                     await bot.send_media_group(chat_id=user.telegram_id, media=att_list)
                 users_.pop()

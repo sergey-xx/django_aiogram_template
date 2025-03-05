@@ -7,5 +7,5 @@ class UsersConfig(AppConfig):
     verbose_name = 'Пользователи Телеграм'
 
     def ready(self) -> None:
-        from backend import config
+        from backend import config  # NOQA
         return super().ready()

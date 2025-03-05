@@ -1,8 +1,8 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from math import ceil
-from backend.settings import ENV, DEFAULT_PAGINATION
+from backend.settings import DEFAULT_PAGINATION
 
-from bot.callbacks import MenuCallbackData, PaginationCallbackData
+from bot.callbacks import PaginationCallbackData
 
 
 async def paginate_markup(
