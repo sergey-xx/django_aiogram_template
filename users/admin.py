@@ -9,9 +9,8 @@ class TgUserAdmin(admin.ModelAdmin):
         'first_name',
         'last_name',
         'username',
-        'birth_date',
         'phone_number',
-        'telegram_id',
+        'tg_id',
         'is_admin',
         'created_at',
     )

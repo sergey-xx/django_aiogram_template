@@ -5,7 +5,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 class TgUser(models.Model):
     """Класс Пользователей ТГ."""
 
-    telegram_id = models.PositiveBigIntegerField(
+    tg_id = models.PositiveBigIntegerField(
         unique=True,
         verbose_name='Идентификатор Telegram',
     )
