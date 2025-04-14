@@ -47,4 +47,3 @@ def validate_att(sender, instance: Mailing, created, **kwargs):
         if Attachment.FileType.DOCUMENT in all_types and len(all_types) > 1:
             instance.date_time = None
             instance.save()
-

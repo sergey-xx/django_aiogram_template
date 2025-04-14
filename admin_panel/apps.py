@@ -7,4 +7,4 @@ class AdminPanelConfig(AppConfig):
     verbose_name = 'Административная панель'
 
     def ready(self) -> None:
-        import admin_panel.signals
+        import admin_panel.signals  # NOQA
