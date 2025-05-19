@@ -16,7 +16,7 @@ def get_all_objects(Model):
 
 @sync_to_async
 def get_all_users():
-    return list(TgUser.objects.filter(telegram_id__isnull=False))
+    return list(TgUser.objects.filter(tg_id__isnull=False))
 
 
 @sync_to_async
@@ -45,9 +45,9 @@ def joint_convert_datetime(date_str: str, time_str: str):
 @sync_to_async
 def get_all_admins_id() -> list:
     return list(TgUser.objects
-                .filter(telegram_id__isnull=False)
+                .filter(tg_id__isnull=False)
                 .filter(is_admin=True)
-                .values_list('telegram_id', flat=True))
+                .values_list('tg_id', flat=True))
 
 
 def get_verbose_fields_info(obj, splitter: str = '\n', max_field_length: int = 20):
@@ -66,15 +66,15 @@ def get_verbose_fields_info(obj, splitter: str = '\n', max_field_length: int = 2
 
 
 @sync_to_async
-def get_user_permisssion(telegram_id):
-    if TgUser.objects.filter(telegram_id=telegram_id):
+def get_user_permisssion(tg_id):
+    if TgUser.objects.filter(tg_id=tg_id):
         return True
     return False
 
 
 @sync_to_async
-def get_admin_permisssion(telegram_id):
-    if TgUser.objects.filter(telegram_id=telegram_id).filter(is_admin=True):
+def get_admin_permisssion(tg_id):
+    if TgUser.objects.filter(telegram_id=tg_id).filter(is_admin=True):
         return True
     return False
 

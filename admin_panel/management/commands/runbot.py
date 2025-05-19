@@ -57,6 +57,8 @@ async def main():
         'interval',
         minutes=ENV.int('MAILING_PERIOD', 1),
         replace_existing=True,
+        misfire_grace_time=10,
+        max_instances=1,
         id='mailing'
     )
 

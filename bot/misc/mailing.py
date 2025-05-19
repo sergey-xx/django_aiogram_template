@@ -34,18 +34,18 @@ async def start_mailing(bot: Bot):
             try:
                 user = users_[-1]
                 if len(attachments) == 0:
-                    await bot.send_message(chat_id=user.telegram_id, text=mailing.text)
+                    await bot.send_message(chat_id=user.tg_id, text=mailing.text)
                 elif len(attachments) > 0:
                     att_list = [
                         input_media[attachment.file_type](media=attachment.file_id) for attachment in attachments
                     ]
                     att_list[-1].caption = mailing.text
-                    await bot.send_media_group(chat_id=user.telegram_id, media=att_list)
+                    await bot.send_media_group(chat_id=user.tg_id, media=att_list)
                 users_.pop()
             except exceptions.TelegramRetryAfter as e:
                 logger.warning(f'Flood limit is exceeded. Sleep {e.retry_after} seconds.')
                 await asyncio.sleep(e.retry_after)
             except (exceptions.TelegramForbiddenError, exceptions.TelegramBadRequest) as e:
                 users_.pop()
-                logger.error(f'Видимо, пользователь {user.username} {user.telegram_id} заблокировал бота')
+                logger.error(f'Видимо, пользователь {user.username} {user.tg_id} заблокировал бота')
                 logger.error(f'{e}')
